@@ -7,10 +7,11 @@ from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, URLInputFile
 from config import BOT_TOKEN
 from commands import (START_BOT_COMMAND, BOOKS_BOT_COMMAND, BOOKS_BOT_CREATE_COMMAND, BOOKS_COMMAND, BOOKS_CREATE_COMMAND)
 from keyboards import (BookCallBack, books_keyboard_markup)
+from model import Book
 
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = BOT_TOKEN
@@ -57,7 +58,22 @@ async def callback_book(callback: CallbackQuery, callback_data: BookCallBack) ->
     book_id = callback_data.id
     book_data = get_books(book_id=book_id)
     book = Book(**book_data)
-
+    text = f"Книга: {book.name}\n" \
+           f"Опис: {book.description}\n" \
+           f"Рейтинг: {book.rating}\n" \
+           f"Жанр: {book.genre}\n" \
+           f"Автори: {', '.join(book.authors)}\n"
+    try:
+        await callback.message.answer_photo(
+            caption=text,
+            photo=URLInputFile(
+                book.poster,
+                filename=f"{book.name}_cover.{book.poster.split(".")[-1]}"
+            )
+        )
+    except Exception as e:
+        await callback.message.answer(text)
+        logging.info(f"Failed to load immage for book {book.name}: {str(e)}")
 
 
 # @dp.message()

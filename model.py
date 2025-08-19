@@ -5,5 +5,5 @@ class Book(BaseModel):
     description: str
     rating: float
     genre: str
-    authors: str
+    authors: list[str]
     poster: str
