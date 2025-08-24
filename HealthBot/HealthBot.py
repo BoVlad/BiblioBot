@@ -41,10 +41,10 @@ DATA_FILE = "data.json"
 TOKEN = BOT_TOKEN
 ALL_SYMBOLS = [
     'a','b','c','d','e','f','g','h','i','j','k','l','m',
-    'n','o','p','q','r','s','t','u','v','w','x','y','z',
+    'n','p','q','r','s','t','u','v','w','x','y','z',
     'A','B','C','D','E','F','G','H','I','J','K','L','M',
-    'N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-    '0','1','2','3','4','5','6','7','8','9'
+    'N','P','Q','R','S','T','U','V','W','X','Y','Z',
+    '1','2','3','4','5','6','7','8','9'
 ]
 
 dp = Dispatcher()
@@ -74,6 +74,227 @@ except FileNotFoundError:
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(f"Вітаю в боті для слідкуванням за здоров'ям {html.bold(message.from_user.full_name)}!")
+
+
+@router.message(STATISTICS_COMMAND, StateFilter("*"))
+async def statistic(message: Message, state: FSMContext):
+    await state.clear()
+    user_id = str(message.from_user.id)
+    data = load_data()
+    try:
+        idcheck = data[user_id]
+        if data[user_id]["early_hours_sleep"] is None:
+            await message.answer("📊 Статистика за останній день:\n"
+                                 "\n"
+                                 f"🛌 Ви спали годин: {data[user_id]["hours_sleep"]},\n"
+                                 f"💧 Ви випили склянок води: {data[user_id]["glass_water"]},\n"
+                                 f"🏃 У вас було хвилин активностей: {data[user_id]["activity_minutes"]},\n"
+                                 f"🙆 Ваше самопочуття: {data[user_id]["well_being"]}/10.\n"
+                                 "\n"
+                                 "\n"
+                                 f"📅 Ви користуєтесь програмою 1 день.")
+        else:
+            average = round(sum(data[user_id]["HI"]) / len(data[user_id]["HI"]), 1)
+            await message.answer("📊 Статистика за передостанній день:\n"
+                                 "\n"
+                                 f"🛌 Ви спали годин: {data[user_id]["early_hours_sleep"]},\n"
+                                 f"💧 Ви випили склянок води: {data[user_id]["early_glass_water"]},\n"
+                                 f"🏃 У вас було хвилин активностей: {data[user_id]["early_activity_minutes"]},\n"
+                                 f"🙆 Ваше самопочуття: {data[user_id]["early_well_being"]}/10.\n"
+                                 "\n"
+                                 "\n"
+                                 "📊 Статистика за останній день:\n"
+                                 "\n"
+                                 f"🛌 Ви спали годин: {data[user_id]["hours_sleep"]},\n"
+                                 f"💧 Ви випили склянок води: {data[user_id]["glass_water"]},\n"
+                                 f"🏃 У вас було хвилин активностей: {data[user_id]["activity_minutes"]},\n"
+                                 f"🙆 Ваше самопочуття: {data[user_id]["well_being"]}/10.\n"
+                                 "\n"
+                                 "\n"
+                                 f"📅 Ви користуєтесь програмою {len(data[user_id]["HI"])} днів,\n"
+                                 f"💕 Ваш Health Index (HI) становить {average}")
+    except Exception:
+        await message.answer("❌ У вас ще немає статистики.")
+        return
+
+@router.message(ADVICE_COMMAND, StateFilter("*"))
+async def cmd_advice(message: Message, state: FSMContext):
+    await state.clear()
+    user_id = str(message.from_user.id)
+    data = load_data()
+    try:
+        idcheck = data[user_id]
+        if data[user_id]["early_hours_sleep"] is None:
+            hours_sleep = data[user_id]["hours_sleep"]
+            glass_water = data[user_id]["glass_water"]
+            activity_minutes = data[user_id]["activity_minutes"]
+            well_being = data[user_id]["well_being"]
+            if hours_sleep < 8:
+                hours_sleep_text = "🛌❌ Ви спали замало, треба спати більше!"
+            if 8 <= hours_sleep <= 12:
+                hours_sleep_text = "🛌✅ Ваш сон в нормі! "
+            if hours_sleep > 12:
+                hours_sleep_text = "🛌❌ Ви спали забагато, треба спати менше!"
+            if glass_water < 7:
+                glass_water_text = "💧❌ Ви випили замало, треба пити більше!"
+            if 7 <= glass_water <= 19:
+                glass_water_text = "💧✅ Ваш водний баланс в нормі!"
+            if glass_water > 19:
+                glass_water_text = "💧❌ Ви випили забагато, треба пити менше!"
+            if activity_minutes < 40:
+                activity_minutes_text = "🏃❌ Ваших активних занятть замало, активнічайте більше!"
+            if 40 <= activity_minutes <= 200:
+                activity_minutes_text = "🏃✅ Кількість вашої активності в нормі!"
+            if activity_minutes > 200:
+                activity_minutes_text = "🏃❌ Ваших активних занятть забагато, активнічайте менше!"
+            if well_being < 5:
+                well_being_text = "🙆❌ Ви себе погано почуваєте! Якщо морально, то підійміть собі настрій 🤗. Якщо фізично - сходіть до лікаря 🏥."
+            if 5 <= well_being <= 10:
+                well_being_text = "🙆✅ Ви себе добре почуваєте! Це дуже круто!"
+            await message.answer("📊 Поради за останній день:\n"
+                                 "\n"
+                                 f"{hours_sleep_text}\n"
+                                 f"{glass_water_text}\n"
+                                 f"{activity_minutes_text}\n"
+                                 f"{well_being_text}")
+            return
+
+
+        else:
+            hours_sleep = data[user_id]["hours_sleep"]
+            glass_water = data[user_id]["glass_water"]
+            activity_minutes = data[user_id]["activity_minutes"]
+            well_being = data[user_id]["well_being"]
+
+            early_hours_sleep = data[user_id]["early_hours_sleep"]
+            early_glass_water = data[user_id]["early_glass_water"]
+            early_activity_minutes = data[user_id]["early_activity_minutes"]
+            early_well_being = data[user_id]["early_well_being"]
+
+            if early_hours_sleep < 8:
+                early_hours_sleep_text = "🛌❌ Ви спали замало, треба спати більше!"
+            if 8 <= early_hours_sleep <= 12:
+                early_hours_sleep_text = "🛌✅ Ваш сон в нормі! "
+            if early_hours_sleep > 12:
+                early_hours_sleep_text = "🛌❌ Ви спали забагато, треба спати менше!"
+            if early_glass_water < 7:
+                early_glass_water_text = "💧❌ Ви випили замало, треба пити більше!"
+            if 7 <= early_glass_water <= 19:
+                early_glass_water_text = "💧✅ Ваш водний баланс в нормі!"
+            if early_glass_water > 19:
+                early_glass_water_text = "💧❌ Ви випили забагато, треба пити менше!"
+            if early_activity_minutes < 40:
+                early_activity_minutes_text = "🏃❌ Ваших активних занятть замало, активнічайте більше!"
+            if 40 <= early_activity_minutes <= 200:
+                early_activity_minutes_text = "🏃✅ Кількість вашої активності в нормі!"
+            if early_activity_minutes > 200:
+                early_activity_minutes_text = "🏃❌ Ваших активних занятть забагато, активнічайте менше!"
+            if early_well_being < 5:
+                early_well_being_text = "🙆❌ Ви себе погано почуваєте! Якщо морально, то підійміть собі настрій 🤗."
+            if 5 <= early_well_being <= 10:
+                early_well_being_text = "🙆✅ Ви себе добре почуваєте! Це дуже круто!"
+
+            if hours_sleep < 8:
+                hours_sleep_text = "🛌❌ Ви спали замало, треба спати більше!"
+            if 8 <= hours_sleep <= 12:
+                hours_sleep_text = "🛌✅ Ваш сон в нормі! "
+            if hours_sleep > 12:
+                hours_sleep_text = "🛌❌ Ви спали забагато, треба спати менше!"
+            if glass_water < 7:
+                glass_water_text = "💧❌ Ви випили замало, треба пити більше!"
+            if 7 <= glass_water <= 19:
+                glass_water_text = "💧✅ Ваш водний баланс в нормі!"
+            if glass_water > 19:
+                glass_water_text = "💧❌ Ви випили забагато, треба пити менше!"
+            if activity_minutes < 40:
+                activity_minutes_text = "🏃❌ Ваших активних занятть замало, активнічайте більше!"
+            if 40 <= activity_minutes <= 200:
+                activity_minutes_text = "🏃✅ Кількість вашої активності в нормі!"
+            if activity_minutes > 200:
+                activity_minutes_text = "🏃❌ Ваших активних занятть забагато, активнічайте менше!"
+            if well_being < 5:
+                well_being_text = "🙆❌ Ви себе погано почуваєте! Якщо морально, то підійміть собі настрій 🤗. Якщо фізично - сходіть до лікаря 🏥."
+            if 5 <= well_being <= 10:
+                well_being_text = "🙆✅ Ви себе добре почуваєте! Це дуже круто!"
+
+            early_average = round(sum(data[user_id]["HI"][:-1]) / len(data[user_id]["HI"][:-1]), 1)
+            average = round(sum(data[user_id]["HI"]) / len(data[user_id]["HI"]), 1)
+
+            if early_average < average:
+                avarage_text = "📈 Ваш Health Index (HI) за останній день покращився! Так тримати!"
+            if early_average > average:
+                avarage_text = "📉 Ваш Health Index (HI) за останній день зменшився! Це погано, його треба підвищувати!"
+            if early_average == average:
+                avarage_text = "➖ Ваш Health Index (HI) за останні дні такий самий! Не погано і не добре!"
+
+            await message.answer("📊 Поради за передостанній день:\n"
+                                 "\n"
+                                 f"{early_hours_sleep_text}\n"
+                                 f"{early_glass_water_text}\n"
+                                 f"{early_activity_minutes_text}\n"
+                                 f"{early_well_being_text}\n"
+                                 "\n"
+                                 "\n"
+                                 "📊 Поради за останній день:\n"
+                                 "\n"
+                                 f"{hours_sleep_text}\n"
+                                 f"{glass_water_text}\n"
+                                 f"{activity_minutes_text}\n"
+                                 f"{well_being_text}\n"
+                                 "\n"
+                                 "\n"
+                                 "📊 Підведемо підсумки:\n"
+                                 "\n"
+                                 f"{avarage_text}")
+            return
+    except IndexError: #TODO при полной комплектации не работает (показывает это)
+        await message.answer("❌ Ви ще не ввели дані хоча би один раз. Введіть дані що би подивитися поради!")
+
+
+
+@router.message(RESET_COMMAND, StateFilter("*"))
+async def cmd_reset(message: Message, state: FSMContext):
+    await state.clear()
+    user_id = str(message.from_user.id)
+    data = load_data()
+    try:
+        idcheck = data[user_id]
+        letters_shuffle = ""
+        for i in range (6):
+            shuffle(ALL_SYMBOLS)
+            shuffle(ALL_SYMBOLS)
+            shuffle(ALL_SYMBOLS)
+            letters_shuffle = letters_shuffle + ALL_SYMBOLS[1]
+        await state.update_data(letters_shuffle=letters_shuffle)
+        await state.set_state(ResetConfirm.confirm)
+        await message.answer(f"❗ Щоб видалити всю інформацію введіть (так само): {letters_shuffle}")
+    except Exception:
+        await message.answer("❌ Про вас ще немає записів")
+
+@router.message(ResetConfirm.confirm)
+async def reset_confirm(message: Message, state: FSMContext):
+    user_id = str(message.from_user.id)
+    data = load_data()
+    user_data = await state.get_data()
+    letters_shuffle = user_data.get("letters_shuffle")
+    if message.text == letters_shuffle:
+        del data[user_id]
+        save_data(data=data)
+        await message.answer("✅ Дані успішно видалено!")
+        await state.clear()
+    else:
+        await message.answer("✅ Видалення даних успішно скасоване!")
+        await state.clear()
+
+
+@router.message(SECRET_COMMAND, StateFilter("*"))
+async def send_from_url(message: Message, state: FSMContext):
+    await state.clear()
+    pic = URLInputFile("https://preview.redd.it/big-monke-flips-you-off-what-u-do-v0-861gk9gqka0c1.png?auto=webp&s=4ffd6a12783c45e1a56bb7c19a57ead83aaa4f33")
+    await message.answer_photo(pic)
+
+
+
 
 
 
@@ -198,11 +419,11 @@ async def info_well_being(message: Message, state: FSMContext):
         new_data[user_id] = {"early_hours_sleep": new_data[user_id].get("hours_sleep"),
                   "early_glass_water": new_data[user_id].get("glass_water"),
                   "early_activity_minutes": new_data[user_id].get("activity_minutes"),
-                  "early_well_being_val": new_data[user_id].get("well_being_val"),
+                  "early_well_being": new_data[user_id].get("well_being"),
                   "hours_sleep": hours_sleep,
                   "glass_water": glass_water,
                   "activity_minutes": activity_minutes,
-                  "well_being_val": well_being_val,
+                  "well_being": well_being_val,
                   "last_time": int(time.time()),
                   "HI": new_data[user_id]["HI"]}
         new_data[user_id]["HI"].append(HI)
@@ -211,7 +432,7 @@ async def info_well_being(message: Message, state: FSMContext):
         new_data[user_id] = {"early_hours_sleep": None,
                              "early_glass_water": None,
                              "early_activity_minutes": None,
-                             "early_well_being_val": None,
+                             "early_well_being": None,
                              "hours_sleep": hours_sleep,
                              "glass_water": glass_water,
                              "activity_minutes": activity_minutes,
@@ -220,225 +441,10 @@ async def info_well_being(message: Message, state: FSMContext):
                              "HI": []}
         new_data[user_id]["HI"].append(HI)
         save_data(data=new_data)
-    await message.answer("✅ Дані збережено!", reply_markup=ReplyKeyboardRemove())
+    await message.answer("✅ Дані успішно збережено!", reply_markup=ReplyKeyboardRemove())
     await state.clear()
 
-@router.message(STATISTICS_COMMAND, StateFilter("*"))
-async def statistic(message: Message, state: FSMContext):
-    await state.clear()
-    user_id = str(message.from_user.id)
-    data = load_data()
-    try:
-        idcheck = data[user_id]
-        if data[user_id]["early_hours_sleep"] is None:
-            await message.answer("📊 Статистика за останній день:\n"
-                                 "\n"
-                                 f"🛌 Ви спали годин: {data[user_id]["hours_sleep"]},\n"
-                                 f"💧 Ви випили склянок води: {data[user_id]["glass_water"]},\n"
-                                 f"🏃 У вас було хвилин активностей: {data[user_id]["activity_minutes"]},\n"
-                                 f"🙆 Ваше самопочуття: {data[user_id]["well_being"]}/10.\n"
-                                 "\n"
-                                 "\n"
-                                 f"📅 Ви користуєтесь програмою 1 день.")
-        else:
-            average = round(sum(data[user_id]["HI"]) / len(data[user_id]["HI"]), 1)
-            await message.answer("📊 Статистика за передостанній день:\n"
-                                 "\n"
-                                 f"🛌 Ви спали годин: {data[user_id]["early_hours_sleep"]},\n"
-                                 f"💧 Ви випили склянок води: {data[user_id]["early_glass_water"]},\n"
-                                 f"🏃 У вас було хвилин активностей: {data[user_id]["early_activity_minutes"]},\n"
-                                 f"🙆 Ваше самопочуття: {data[user_id]["early_well_being"]}/10.\n"
-                                 "\n"
-                                 "\n"
-                                 "📊 Статистика за останній день:\n"
-                                 "\n"
-                                 f"🛌 Ви спали годин: {data[user_id]["hours_sleep"]},\n"
-                                 f"💧 Ви випили склянок води: {data[user_id]["glass_water"]},\n"
-                                 f"🏃 У вас було хвилин активностей: {data[user_id]["activity_minutes"]},\n"
-                                 f"🙆 Ваше самопочуття: {data[user_id]["well_being"]}/10.\n"
-                                 "\n"
-                                 "\n"
-                                 f"📅 Ви користуєтесь програмою {len(data[user_id]["HI"])} днів,\n"
-                                 f"💕 Ваш Health Index (HI) становить {average}")
-    except Exception:
-        await message.answer("❌ У вас ще немає статистики.")
-        return
 
-@router.message(ADVICE_COMMAND, StateFilter("*"))
-async def cmd_advice(message: Message, state: FSMContext):
-    await state.clear()
-    user_id = str(message.from_user.id)
-    data = load_data()
-    try:
-        idcheck = data[user_id]
-        if data[user_id]["early_hours_sleep"] is None:
-            hours_sleep = data[user_id]["hours_sleep"]
-            glass_water = data[user_id]["glass_water"]
-            activity_minutes = data[user_id]["activity_minutes"]
-            well_being = data[user_id]["well_being"]
-            if hours_sleep < 8:
-                hours_sleep_text = "🛌❌ Ви спали замало, треба спати більше!"
-            if 8 <= hours_sleep <= 12:
-                hours_sleep_text = "🛌✅ Ваш сон в нормі! "
-            if hours_sleep > 12:
-                hours_sleep_text = "🛌❌ Ви спали забагато, треба спати менше!"
-            if glass_water < 7:
-                glass_water_text = "💧❌ Ви випили замало, треба пити більше!"
-            if 7 <= glass_water <= 19:
-                glass_water_text = "💧✅ Ваш водний баланс в нормі!"
-            if glass_water > 19:
-                glass_water_text = "💧❌ Ви випили забагато, треба пити менше!"
-            if activity_minutes < 40:
-                activity_minutes_text = "🏃❌ Ваших активних занятть замало, активнічайте більше!"
-            if 40 <= activity_minutes <= 200:
-                activity_minutes_text = "🏃✅ Кількість вашої активності в нормі!"
-            if activity_minutes > 200:
-                activity_minutes_text = "🏃❌ Ваших активних занятть забагато, активнічайте менше!"
-            if well_being < 5:
-                well_being_text = "🙆❌ Ви себе погано почуваєте! Якщо морально, то підійміть собі настрій 🤗. Якщо фізично - сходіть до лікаря 🏥."
-            if 5 <= well_being <= 10:
-                well_being_text = "🙆✅ Ви себе добре почуваєте! Це дуже круто!"
-            await message.answer("📊 Поради за останній день:"
-                                 "\n"
-                                 f"{hours_sleep_text}\n"
-                                 f"{glass_water_text}\n"
-                                 f"{activity_minutes_text}\n"
-                                 f"{well_being_text}")
-            return
-
-
-        else:
-            hours_sleep = data[user_id]["hours_sleep"]
-            glass_water = data[user_id]["glass_water"]
-            activity_minutes = data[user_id]["activity_minutes"]
-            well_being = data[user_id]["well_being"]
-
-            early_hours_sleep = data[user_id]["early_hours_sleep"]
-            early_glass_water = data[user_id]["early_glass_water"]
-            early_activity_minutes = data[user_id]["early_activity_minutes"]
-            early_well_being = data[user_id]["early_well_being"]
-
-            if early_hours_sleep < 8:
-                early_hours_sleep_text = "🛌❌ Ви спали замало, треба спати більше!"
-            if 8 <= early_hours_sleep <= 12:
-                early_hours_sleep_text = "🛌✅ Ваш сон в нормі! "
-            if early_hours_sleep > 12:
-                early_hours_sleep_text = "🛌❌ Ви спали забагато, треба спати менше!"
-            if early_glass_water < 7:
-                early_glass_water_text = "💧❌ Ви випили замало, треба пити більше!"
-            if 7 <= early_glass_water <= 19:
-                early_glass_water_text = "💧✅ Ваш водний баланс в нормі!"
-            if early_glass_water > 19:
-                early_glass_water_text = "💧❌ Ви випили забагато, треба пити менше!"
-            if early_activity_minutes < 40:
-                early_activity_minutes_text = "🏃❌ Ваших активних занятть замало, активнічайте більше!"
-            if 40 <= early_activity_minutes <= 200:
-                early_activity_minutes_text = "🏃✅ Кількість вашої активності в нормі!"
-            if early_activity_minutes > 200:
-                early_activity_minutes_text = "🏃❌ Ваших активних занятть забагато, активнічайте менше!"
-            if early_well_being < 5:
-                early_well_being_text = "🙆❌ Ви себе погано почуваєте! Якщо морально, то підійміть собі настрій 🤗."
-            if 5 <= early_well_being <= 10:
-                early_well_being_text = "🙆✅ Ви себе добре почуваєте! Це дуже круто!"
-
-            if hours_sleep < 8:
-                hours_sleep_text = "🛌❌ Ви спали замало, треба спати більше!"
-            if 8 <= hours_sleep <= 12:
-                hours_sleep_text = "🛌✅ Ваш сон в нормі! "
-            if hours_sleep > 12:
-                hours_sleep_text = "🛌❌ Ви спали забагато, треба спати менше!"
-            if glass_water < 7:
-                glass_water_text = "💧❌ Ви випили замало, треба пити більше!"
-            if 7 <= glass_water <= 19:
-                glass_water_text = "💧✅ Ваш водний баланс в нормі!"
-            if glass_water > 19:
-                glass_water_text = "💧❌ Ви випили забагато, треба пити менше!"
-            if activity_minutes < 40:
-                activity_minutes_text = "🏃❌ Ваших активних занятть замало, активнічайте більше!"
-            if 40 <= activity_minutes <= 200:
-                activity_minutes_text = "🏃✅ Кількість вашої активності в нормі!"
-            if activity_minutes > 200:
-                activity_minutes_text = "🏃❌ Ваших активних занятть забагато, активнічайте менше!"
-            if well_being < 5:
-                well_being_text = "🙆❌ Ви себе погано почуваєте! Якщо морально, то підійміть собі настрій 🤗. Якщо фізично - сходіть до лікаря 🏥."
-            if 5 <= well_being <= 10:
-                well_being_text = "🙆✅ Ви себе добре почуваєте! Це дуже круто!"
-
-            early_average = round(sum(data[user_id]["HI"][:-1]) / len(data[user_id]["HI"][:-1]), 1)
-            average = round(sum(data[user_id]["HI"]) / len(data[user_id]["HI"]), 1)
-
-            if early_average < average:
-                avarage_text = "📈 Ваш Health Index (HI) за останній день покращився! Так тримати!"
-            if early_average > average:
-                avarage_text = "📉 Ваш Health Index (HI) за останній день зменшився! Це погано, його треба підвищувати!"
-            if early_average == average:
-                avarage_text = "➖ Ваш Health Index (HI) за останні дні такий самий! Не погано і не добре!"
-
-            await message.answer("📊 Поради за передостанній день:\n"
-                                 "\n"
-                                 f"{early_hours_sleep_text}\n"
-                                 f"{early_glass_water_text}\n"
-                                 f"{early_activity_minutes_text}\n"
-                                 f"{early_well_being_text}\n"
-                                 "\n"
-                                 "\n"
-                                 "📊 Поради за останній день:\n"
-                                 "\n"
-                                 f"{hours_sleep_text}\n"
-                                 f"{glass_water_text}\n"
-                                 f"{activity_minutes_text}\n"
-                                 f"{well_being_text}\n"
-                                 "\n"
-                                 "\n"
-                                 "📊 Підведемо підсумки:\n"
-                                 "\n"
-                                 f"{avarage_text}")
-            return
-    except Exception:
-        await message.answer("❌ Ви ще не ввели дані хоча би один раз. Введіть дані що би подивитися поради!")
-
-
-
-@router.message(RESET_COMMAND, StateFilter("*"))
-async def cmd_reset(message: Message, state: FSMContext):
-    await state.clear()
-    user_id = str(message.from_user.id)
-    data = load_data()
-    try:
-        idcheck = data[user_id]
-        letters_shuffle = ""
-        for i in range (6):
-            shuffle(ALL_SYMBOLS)
-            shuffle(ALL_SYMBOLS)
-            shuffle(ALL_SYMBOLS)
-            letters_shuffle = letters_shuffle + ALL_SYMBOLS[1]
-        await state.update_data(letters_shuffle=letters_shuffle)
-        await state.set_state(ResetConfirm.confirm)
-        await message.answer(f"❗ Щоб видалити всю інформацію введіть (так само): {letters_shuffle}")
-    except Exception:
-        await message.answer("❌ Про вас ще немає записів")
-
-@router.message(ResetConfirm.confirm)
-async def reset_confirm(message: Message, state: FSMContext):
-    user_id = str(message.from_user.id)
-    data = load_data()
-    user_data = await state.get_data()
-    letters_shuffle = user_data.get("letters_shuffle")
-    if message.text == letters_shuffle:
-        del data[user_id]
-        save_data(data=data)
-        await message.answer("✅ Дані успішно видалено!")
-        await state.clear()
-    else:
-        await message.answer("✅ Видалення даних успішно скасоване!")
-        await state.clear()
-
-
-@router.message(SECRET_COMMAND, StateFilter("*"))
-async def send_from_url(message: Message):
-    state.clear()
-    pic = URLInputFile("https://preview.redd.it/big-monke-flips-you-off-what-u-do-v0-861gk9gqka0c1.png?auto=webp&s=4ffd6a12783c45e1a56bb7c19a57ead83aaa4f33")
-    await message.answer_photo(pic)
 
 
 async def main() -> None:
