@@ -253,6 +253,7 @@ async def statistic(message: Message, state: FSMContext):
 
 @router.message(ADVICE_COMMAND, StateFilter("*"))
 async def cmd_advice(message: Message, state: FSMContext):
+
     await state.clear()
     await message.answer("💡 Тут будуть поради.")
 
