@@ -7,11 +7,13 @@ from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
-from aiogram.types import Message, CallbackQuery, URLInputFile
+from aiogram.fsm.context import FSMContext
+from aiogram.types import Message, CallbackQuery, URLInputFile, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from config import BOT_TOKEN
 from commands import (START_BOT_COMMAND, BOOKS_BOT_COMMAND, BOOKS_BOT_CREATE_COMMAND, BOOKS_COMMAND, BOOKS_CREATE_COMMAND)
 from keyboards import (BookCallBack, books_keyboard_markup)
 from model import Book
+from state import BookForm
 
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = BOT_TOKEN
@@ -35,6 +37,19 @@ async def command_start_handler(message: Message) -> None:
     await message.answer(f"Вітаю, {html.bold(message.from_user.full_name)}! \n"
                          f"Я бот для управління бібліотекою книг")
 
+
+
+def add_book(book: dict, file_path: str = "data.json"):
+    books = get_books(file_path=file_path, bookd_id=None)
+    if books:
+        books.append(book)
+        with open(file_path, "w", encoding="utf-8") as fp:
+            json.dump(
+                books,
+                fp,
+                indent=4,
+                ensure_ascii=False,
+            )
 
 def get_books(file_path: str = "data.json", book_id: int | None = None):
     with open(file_path, "r", encoding="utf-8") as fp:
@@ -75,6 +90,16 @@ async def callback_book(callback: CallbackQuery, callback_data: BookCallBack) ->
         await callback.message.answer(text)
         logging.info(f"Failed to load immage for book {book.name}: {str(e)}")
 
+
+@dp.message(BOOKS_CREATE_COMMAND)
+async def book_create(message: Message, state: FSMContext) -> None:
+    await state.set_state(BookForm.name)
+    await message.answer(f"Введіть назву книги.", reply_markup=ReplyKeyboardRemove())
+
+@dp.message(BookForm.name)
+async def book_name(message: Message, state: FSMContext) -> None:
+    await state.update_data(name=message.text)
+    await message.answer(f"Введіть опис книги.", reply_markup=ReplyKeyboardRemove())
 
 # @dp.message()
 # async def echo_handler(message: Message) -> None:
