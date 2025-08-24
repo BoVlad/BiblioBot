@@ -209,57 +209,58 @@ async def info_well_being(message: Message, state: FSMContext):
                              "HI": []}
         new_data[user_id]["HI"].append(HI)
         save_data(data=new_data)
-
-    @router.message(STATISTICS_COMMAND, StateFilter("*"))
-    async def statistic(message: Message, state: FSMContext):
-        await state.clear()
-        user_id = str(message.from_user.id)
-        data = load_data()
-        try:
-            idcheck = data[user_id]
-            if data[user_id]["early_hours_sleep"] is None:
-                await message.answer("📊 Статистика за останній день:\n"
-                                     f"🛌 Ви спали годин: {data[user_id]["hours_sleep"]},\n"
-                                     f"💧 Ви випили склянок води: {data[user_id]["glass_water"]},\n"
-                                     f"🏃 У вас було хвилин активностей: {data[user_id]["activity_minutes"]},\n"
-                                     f"🙆 Ваше самопочуття: {data[user_id]["well_being"]}/10.\n"
-                                     f"\n"
-                                     f"📅 Ви користуєтесь програмою 1 день.")
-            else:
-                average = sum(data[user_id]["HI"]) // len(data[user_id]["HI"])
-                if average.is_integer():
-                    result = int(average)
-                else:
-                    result = round(average, 1)
-                await message.answer("📊 Статистика за передостанній день:\n"
-                                     f"🛌 Ви спали годин: {data[user_id]["early_hours_sleep"]},\n"
-                                     f"💧 Ви випили склянок води: {data[user_id]["early_glass_water"]},\n"
-                                     f"🏃 У вас було хвилин активностей: {data[user_id]["early_activity_minutes"]},\n"
-                                     f"🙆 Ваше самопочуття: {data[user_id]["early_well_being"]}/10.\n"
-                                     f"\n"
-                                     "📊 Статистика за останній день:\n"
-                                     f"🛌 Ви спали годин: {data[user_id]["hours_sleep"]},\n"
-                                     f"💧 Ви випили склянок води: {data[user_id]["glass_water"]},\n"
-                                     f"🏃 У вас було хвилин активностей: {data[user_id]["activity_minutes"]},\n"
-                                     f"🙆 Ваше самопочуття: {data[user_id]["well_being"]}/10.\n"
-                                     f"\n"
-                                     f"📅 Ви користуєтесь програмою {len(data[user_id]["HI"])} днів,\n"
-                                     f"💕 Ваш Health Index (HI) становить {result}")
-        except Exception:
-            await message.answer("❌ У вас ще немає статистики.")
-            return
-
-    @router.message(ADVICE_COMMAND, StateFilter("*"))
-    async def cmd_advice(message: Message, state: FSMContext):
-        await state.clear()
-        await message.answer("💡 Тут будуть поради.")
-
-    @router.message(RESET_COMMAND, StateFilter("*"))
-    async def cmd_reset(message: Message, state: FSMContext):
-        await state.clear()
-        await message.answer("🔄 Прогрес скинуто.")
     await message.answer("✅ Дані збережено!", reply_markup=ReplyKeyboardRemove())
     await state.clear()
+
+@router.message(STATISTICS_COMMAND, StateFilter("*"))
+async def statistic(message: Message, state: FSMContext):
+    await state.clear()
+    user_id = str(message.from_user.id)
+    data = load_data()
+    try:
+        idcheck = data[user_id]
+        if data[user_id]["early_hours_sleep"] is None:
+            await message.answer("📊 Статистика за останній день:\n"
+                                 f"🛌 Ви спали годин: {data[user_id]["hours_sleep"]},\n"
+                                 f"💧 Ви випили склянок води: {data[user_id]["glass_water"]},\n"
+                                 f"🏃 У вас було хвилин активностей: {data[user_id]["activity_minutes"]},\n"
+                                 f"🙆 Ваше самопочуття: {data[user_id]["well_being"]}/10.\n"
+                                 f"\n"
+                                 f"📅 Ви користуєтесь програмою 1 день.")
+        else:
+            average = sum(data[user_id]["HI"]) // len(data[user_id]["HI"])
+            if average.is_integer():
+                result = int(average)
+            else:
+                result = round(average, 1)
+            await message.answer("📊 Статистика за передостанній день:\n"
+                                 f"🛌 Ви спали годин: {data[user_id]["early_hours_sleep"]},\n"
+                                 f"💧 Ви випили склянок води: {data[user_id]["early_glass_water"]},\n"
+                                 f"🏃 У вас було хвилин активностей: {data[user_id]["early_activity_minutes"]},\n"
+                                 f"🙆 Ваше самопочуття: {data[user_id]["early_well_being"]}/10.\n"
+                                 f"\n"
+                                 "📊 Статистика за останній день:\n"
+                                 f"🛌 Ви спали годин: {data[user_id]["hours_sleep"]},\n"
+                                 f"💧 Ви випили склянок води: {data[user_id]["glass_water"]},\n"
+                                 f"🏃 У вас було хвилин активностей: {data[user_id]["activity_minutes"]},\n"
+                                 f"🙆 Ваше самопочуття: {data[user_id]["well_being"]}/10.\n"
+                                 f"\n"
+                                 f"📅 Ви користуєтесь програмою {len(data[user_id]["HI"])} днів,\n"
+                                 f"💕 Ваш Health Index (HI) становить {result}")
+    except Exception:
+        await message.answer("❌ У вас ще немає статистики.")
+        return
+
+@router.message(ADVICE_COMMAND, StateFilter("*"))
+async def cmd_advice(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("💡 Тут будуть поради.")
+
+@router.message(RESET_COMMAND, StateFilter("*"))
+async def cmd_reset(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("🔄 Прогрес скинуто.")
+
 
 @router.message(SECRET_COMMAND, StateFilter("*"))
 async def send_from_url(message: Message):
