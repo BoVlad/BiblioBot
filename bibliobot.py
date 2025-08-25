@@ -2,6 +2,7 @@ import asyncio
 import logging
 import json
 import sys
+import cohere
 
 from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
@@ -9,7 +10,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, CallbackQuery, URLInputFile, ReplyKeyboardMarkup, ReplyKeyboardRemove
-from config import BOT_TOKEN
+from config import BOT_TOKEN, API_TOKEN
 from commands import (START_BOT_COMMAND, BOOKS_BOT_COMMAND, BOOKS_BOT_CREATE_COMMAND, BOOKS_COMMAND, BOOKS_CREATE_COMMAND)
 from keyboards import (BookCallBack, books_keyboard_markup)
 from model import Book
@@ -18,6 +19,8 @@ from state import BookForm
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = BOT_TOKEN
 
+COHERE_API_KEY = API_TOKEN
+COHERE_API_URL = "https://api.cohere.ai/v1/generate"
 # All handlers should be attached to the Router (or Dispatcher)
 
 dp = Dispatcher()
@@ -36,6 +39,25 @@ async def command_start_handler(message: Message) -> None:
     logging.info(f"{message.from_user.full_name}")
     await message.answer(f"Вітаю, {html.bold(message.from_user.full_name)}! \n"
                          f"Я бот для управління бібліотекою книг")
+
+
+# Функція для генерації тексту через Cohere API
+def generate_text(prompt):
+    co = cohere.ClientV2(api_key="gMveTRmkkQe1WcVRHA3BRQR6SpdGRvMy5a2NTiez")
+    res = co.chat(
+        model="command-a-03-2025",
+        messages=[
+            {
+                "role": "user",
+                "content": f"{prompt}",
+            }
+        ],
+    )
+    return res.message.content[0].text
+
+
+
+
 
 
 
@@ -116,7 +138,14 @@ async def book_name(message: Message, state: FSMContext) -> None:
 #         # But not all the types is supported to be copied so need to handle it
 #         await message.answer("Nice try!")
 
-
+@dp.message()
+async def echo_handler(message: Message) -> None:
+    user_input = message.text
+    await message.answer(f"дякую {message.from_user.full_name} "
+                         f"Генерую відповідь, зачекайте...")
+    generated_text = generate_text(user_input)
+    print(generated_text)
+    await message.answer(f"{generated_text}")
 
 async def main() -> None:
     # Initialize Bot instance with default bot properties which will be passed to all API calls
@@ -131,6 +160,7 @@ async def main() -> None:
     )
 
     # And the run events dispatching
+    # await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 

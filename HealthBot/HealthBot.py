@@ -21,12 +21,14 @@ NEW_INFO_BOT_COMMAND = BotCommand(command="new_info", description="Ввести 
 STATISTICS_BOT_COMMAND = BotCommand(command="statistic", description="Показати статистику")
 ADVICE_BOT_COMMAND = BotCommand(command="advice", description="Вивести поради для покращення стану")
 RESET_BOT_COMMAND = BotCommand(command="reset", description="Скинути прогрес")
+HELP_BOT_COMMAND = BotCommand(command="reset", description="Скинути прогрес")
 
 NEW_INFO_COMMAND = Command("new_info")
 STATISTICS_COMMAND = Command("statistic")
 ADVICE_COMMAND = Command("advice")
 RESET_COMMAND = Command("reset")
 SECRET_COMMAND = Command("secret")
+HELP_COMMAND = Command("help")
 
 class HealthInfo(StatesGroup):
     hours_sleep = State()
@@ -247,9 +249,24 @@ async def cmd_advice(message: Message, state: FSMContext):
                                  "\n"
                                  f"{avarage_text}")
             return
-    except IndexError: #TODO при полной комплектации не работает (показывает это)
+    except Exception:
         await message.answer("❌ Ви ще не ввели дані хоча би один раз. Введіть дані що би подивитися поради!")
 
+
+
+@router.message(SECRET_COMMAND, StateFilter("*"))
+async def cmd_secret_command(message: Message, state: FSMContext):
+    await state.clear()
+    pic = URLInputFile("https://preview.redd.it/big-monke-flips-you-off-what-u-do-v0-861gk9gqka0c1.png?auto=webp&s=4ffd6a12783c45e1a56bb7c19a57ead83aaa4f33")
+    await message.answer_photo(pic)
+
+
+@router.message(HELP_COMMAND, StateFilter("*"))
+async def cmd_secret_command(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer("Допомога:\n"
+                         "\n"
+                         " ")
 
 
 @router.message(RESET_COMMAND, StateFilter("*"))
@@ -285,15 +302,6 @@ async def reset_confirm(message: Message, state: FSMContext):
     else:
         await message.answer("✅ Видалення даних успішно скасоване!")
         await state.clear()
-
-
-@router.message(SECRET_COMMAND, StateFilter("*"))
-async def send_from_url(message: Message, state: FSMContext):
-    await state.clear()
-    pic = URLInputFile("https://preview.redd.it/big-monke-flips-you-off-what-u-do-v0-861gk9gqka0c1.png?auto=webp&s=4ffd6a12783c45e1a56bb7c19a57ead83aaa4f33")
-    await message.answer_photo(pic)
-
-
 
 
 
@@ -451,6 +459,7 @@ async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     await bot.set_my_commands(
         [
+            HELP_BOT_COMMAND,
             NEW_INFO_BOT_COMMAND,
             STATISTICS_BOT_COMMAND,
             ADVICE_BOT_COMMAND,
@@ -458,6 +467,7 @@ async def main() -> None:
         ]
     )
     dp.include_router(router)
+    # await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
