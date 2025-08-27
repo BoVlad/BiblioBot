@@ -17,18 +17,20 @@ from aiogram.types.input_file import URLInputFile
 
 from Config import BOT_TOKEN
 
+HELP_BOT_COMMAND = BotCommand(command="help", description="Допомога в боті")
+RESET_BOT_COMMAND = BotCommand(command="reset", description="Скинути прогрес")
 NEW_INFO_BOT_COMMAND = BotCommand(command="new_info", description="Ввести дані за сьогодні")
 STATISTICS_BOT_COMMAND = BotCommand(command="statistic", description="Показати статистику")
 ADVICE_BOT_COMMAND = BotCommand(command="advice", description="Вивести поради для покращення стану")
-RESET_BOT_COMMAND = BotCommand(command="reset", description="Скинути прогрес")
-HELP_BOT_COMMAND = BotCommand(command="reset", description="Скинути прогрес")
 
+
+HELP_COMMAND = Command("help")
 NEW_INFO_COMMAND = Command("new_info")
 STATISTICS_COMMAND = Command("statistic")
 ADVICE_COMMAND = Command("advice")
 RESET_COMMAND = Command("reset")
 SECRET_COMMAND = Command("secret")
-HELP_COMMAND = Command("help")
+
 
 class HealthInfo(StatesGroup):
     hours_sleep = State()
@@ -266,7 +268,10 @@ async def cmd_secret_command(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Допомога:\n"
                          "\n"
-                         " ")
+                         "• /new_info - це команда для вводу нових даних. Вводьте дані кожен день для відслідковування вашого здоров'я!\n"
+                         "• /statistic - це команда для відображення статистики. Введіть дані хоча б один раз, щоб дивитися статистику.\n"
+                         "• /advice - це команда для відображення порад щодо покращення вашого рівня здоров'я. Введіть дані хоча б один раз, щоб дивитися поради.\n"
+                         "• /reset - це команда для онулення всіх записів. Введіть дані хоча б один раз, щоб онулити всі записи.")
 
 
 @router.message(RESET_COMMAND, StateFilter("*"))
